@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <string>
 #include <string.h>
+
 // Структура Client
 struct Client {
     uint32_t ID;
@@ -12,6 +13,7 @@ struct Client {
 
 // Типы товаров (предположим, что это электроника)
 enum ItemType {
+    Unknown,
     Smartphone,
     Laptop,
     Television,
@@ -45,15 +47,27 @@ struct Item {
         strncpy(Model, model, sizeof(Model) - 1);
         Model[sizeof(Model) - 1] = '\0';
     }
-    Item(){};
+    Item(){Model[0] = '\0';};
 };
+
+Item searchItemByID(const std::vector<Item>& items, uint32_t itemID) {
+    for (const auto& item : items) {
+        if (item.ID == itemID) {
+            return item;
+        }
+    }
+    // If itemID is not found, return a default-constructed Item
+    return Item();
+}
 
 // Структура Order Item
 struct OrderItem {
     uint32_t ItemID;
     uint32_t Amount;
     float TotalPrice;
-    uint32_t NextID; // ID следующего элемента OrderItem
+    OrderItem(uint32_t id, uint32_t amount, float price):
+        ItemID(id), Amount(amount), TotalPrice(price){};
+    OrderItem(){};
 };
 
 // Типы оплаты
@@ -63,17 +77,38 @@ enum PaymentType {
     PayPal,
 };
 
+std::string paymentTypeToString(PaymentType type) {
+    switch (type) {
+        case PaymentType::Cash:
+            return "Cash";
+        case PaymentType::CreditCard:
+            return "CreditCard";
+        case PaymentType::PayPal:
+            return "PayPal";
+        default:
+            return "Unknown";
+    }
+}
+
 // Структура Order
 struct Order {
     uint32_t ID;
-    char Date[20];
+    std::string Date;
     uint32_t ClientID;
     float TotalPrice;
     PaymentType PaymentType;
-    uint32_t FirstOrderItemID; // ID первого элемента OrderItem
+    std::vector<OrderItem> Items;
 };
+
 // Уровни пользователей
-enum class UserRole {
-    Client,
-    Admin,
+enum UserRole {
+    ClientUser,
+    AdminUser,
+};
+
+struct MenuScreen {
+    std::string Name;
+    std::vector<std::string> Actions;
+    std::string TableName;
+    uint32_t ElementIndex;
 };
