@@ -13,6 +13,7 @@
 
 std::vector<Item> items_db;
 std::vector<Order> order_db;
+std::vector<OrderItem> order_item_db;
 
 MenuScreen CreateOrderScreen;
 MenuScreen AddItemToOrderScreen;
@@ -106,17 +107,29 @@ int main() {
 
 
     items_db = loadFromFile<Item>( "items.bin" );
-    //order_db = loadFromFile<Order>( "orders.bin" );
+    order_db = loadFromFile<Order>( "orders.bin" );
+    order_item_db = loadFromFile<OrderItem>( "item_orders.bin" );
 
-    //displayOrderTable(order_db);
+    displayOrderTable(order_db);
+
+    if (order_db.size() != 0) {
+        std::cout << "There are " << order_db.size() << " orders in DB" << std::endl;
+        displayOrderItemTable(order_db[0]);
+    }
 
     Order newOrder = createOrder(CreateOrderScreen);
-    if (newOrder.Items.empty()) {
+    if (newOrder.FirstOrderItemID == 0) {
         std::cout << "Order creation was cancelled." << std::endl;
     } else {
         order_db.push_back(newOrder);
         std::cout << "New order created successfully!" << std::endl;
     }
+
+    if (order_db.size() != 0) {
+        std::cout << "There are " << order_db.size() << " orders in DB" << std::endl;
+        std::cout << "First order 'FirstItemId' = " << order_db[0].FirstOrderItemID << std::endl;
+    }
     saveToFile<Order>(order_db, "orders.bin");
+    saveToFile<OrderItem>(order_item_db, "item_orders.bin");
     return 0;
 }

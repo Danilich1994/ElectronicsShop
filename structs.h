@@ -13,11 +13,11 @@ struct Client {
 
 // Типы товаров (предположим, что это электроника)
 enum ItemType {
-    Unknown,
     Smartphone,
     Laptop,
     Television,
     Tablet,
+    UnknownItem,
 };
 
 // Функция для получения имени элемента перечисления ItemType в виде строки
@@ -47,7 +47,7 @@ struct Item {
         strncpy(Model, model, sizeof(Model) - 1);
         Model[sizeof(Model) - 1] = '\0';
     }
-    Item(){Model[0] = '\0';};
+    Item(): ID(0), Type(ItemType::UnknownItem), Price(0) {Model[0] = '\0';};
 };
 
 Item searchItemByID(const std::vector<Item>& items, uint32_t itemID) {
@@ -62,19 +62,58 @@ Item searchItemByID(const std::vector<Item>& items, uint32_t itemID) {
 
 // Структура Order Item
 struct OrderItem {
+    uint32_t ID;
     uint32_t ItemID;
     uint32_t Amount;
     float TotalPrice;
-    OrderItem(uint32_t id, uint32_t amount, float price):
-        ItemID(id), Amount(amount), TotalPrice(price){};
-    OrderItem(){};
+    uint32_t NextOrderItemID;
+    OrderItem(uint32_t id, uint32_t itemId, uint32_t amount, float price):
+        ID(id), ItemID(itemId), Amount(amount), TotalPrice(price){};
+    OrderItem(): ID(0), ItemID(0), Amount(0), TotalPrice(0), NextOrderItemID(0) {};
 };
+
+OrderItem searchOrderItemByID(const std::vector<OrderItem>& items, uint32_t itemID) {
+
+    for (const auto& item : items) {
+        if (item.ID == itemID) {
+            return item;
+        }
+    }
+
+    // If itemID is not found, return a -1
+    return OrderItem();
+}
+
+void setNextOrderItemID(std::vector<OrderItem>& items, uint32_t firstItemID, uint32_t nextItemID) {
+    
+    uint32_t index = 0;
+    uint32_t currentID = firstItemID;
+    std::cout << "\nDEBUG::First OrderItem ID in chain: " << currentID << std::endl;
+    while (index < items.size()) {
+        if (items[index].ID == currentID){
+            if (items[index].NextOrderItemID != 0){
+                currentID = items[index].NextOrderItemID;
+                index = 0;
+                std::cout << "\nDEBUG::Next OrderItem ID in chain: " << currentID << std::endl;
+            } else {
+                items[index].NextOrderItemID = nextItemID;
+                break;
+            }
+        } else index ++;
+    }
+
+    // If itemID is not found, return a default-constructed Item
+    if (index == items.size()) {
+        std::cout << "\nDEBUG::Unable to find an OrderItem with ID: " << firstItemID << std::endl;
+    }
+}
 
 // Типы оплаты
 enum PaymentType {
     Cash,
     CreditCard,
     PayPal,
+    UnknownPayment,
 };
 
 std::string paymentTypeToString(PaymentType type) {
@@ -93,17 +132,19 @@ std::string paymentTypeToString(PaymentType type) {
 // Структура Order
 struct Order {
     uint32_t ID;
-    std::string Date;
+    char Date[11];
     uint32_t ClientID;
     float TotalPrice;
     PaymentType PaymentType;
-    std::vector<OrderItem> Items;
+    uint32_t FirstOrderItemID;
+
+    Order(): ID(0), ClientID(0), TotalPrice(0), PaymentType(PaymentType::UnknownPayment), FirstOrderItemID(0) { Date[0] = '\0';};
 };
 
 // Уровни пользователей
 enum UserRole {
     ClientUser,
-    AdminUser,
+    AdminUser
 };
 
 struct MenuScreen {

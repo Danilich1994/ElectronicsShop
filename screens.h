@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <ctime>
 
 //#include "structs.h"
 
@@ -26,12 +27,41 @@ void previousPage(int32_t& index){
     if (index < 0) index = 0;
 }
 
-float getOrderTotalPrice(const std::vector<OrderItem>& orderItems){
+float getOrderTotalPrice(const Order& order){
     float totalPrice = 0;
-    for (const auto& item : orderItems) {
-        totalPrice = totalPrice + item.TotalPrice;
+    OrderItem temp;
+    uint32_t it = order.FirstOrderItemID;
+    while (it != 0){
+        temp = searchOrderItemByID(order_item_db, it);
+        totalPrice = totalPrice + temp.TotalPrice;
+        it = temp.NextOrderItemID;
     }
     return totalPrice;
+}
+
+template<typename T>
+unsigned int getNextAvailableID(const std::vector<T>& data) {
+  unsigned int smallest = 1;
+  if (data.size() == 0) return smallest;
+
+  std::vector<unsigned int> ids;
+  ids.reserve(data.size());
+  
+  for (const auto& next : data) {
+    ids.push_back(next.ID);
+  }
+  
+  std::sort(ids.begin(), ids.end());
+  
+  for (unsigned int id : ids) {
+    if (id == smallest) {
+      smallest++;
+    } else if (id > smallest) {
+      return smallest;
+    }
+  }
+  
+  return smallest;
 }
 
 void printActions(const MenuScreen& screen) {
@@ -72,18 +102,25 @@ void displayItemTable(const std::vector<Item>& items, int startIndex = 0) {
     std::cout << std::setfill('=') << std::setw(80) << "" << std::setfill(' ') << std::endl;
 }
 
-void displayOrderItemTable(const std::vector<OrderItem>& orderItems, int startIndex = 0) {
-    int endIndex = std::min(startIndex + TABLE_PAGE_AMOUNT, static_cast<int>(orderItems.size()));
+void displayOrderItemTable(const Order& order, int startIndex = 0) {
+    std::vector<OrderItem> tempOrderItems;
+    uint32_t nextOrderItemId = order.FirstOrderItemID;
+    while (nextOrderItemId != 0){
+        tempOrderItems.push_back(searchOrderItemByID(order_item_db, nextOrderItemId));
+        nextOrderItemId = tempOrderItems.back().NextOrderItemID;
+    }
+
+    int endIndex = std::min(startIndex + TABLE_PAGE_AMOUNT, static_cast<int>(tempOrderItems.size()));
     std::cout << std::left << std::setw(10) << "Item ID"
                 << std::setw(30) << "Model"
                 << std::setw(10) << "Amount"
                 << std::setw(15) << "Total Price" << std::endl;
     std::cout << std::setfill('=') << std::setw(65) << "" << std::setfill(' ') << std::endl;
     for (int i = startIndex; i < endIndex; i++) {
-        std::cout << std::left << std::setw(10) << orderItems[i].ItemID
-                    << std::setw(30) << searchItemByID(items_db, orderItems[i].ItemID).Model
-                    << std::setw(10) << orderItems[i].Amount
-                    << std::setw(15) << std::fixed << std::setprecision(2) << orderItems[i].TotalPrice << std::endl;
+        std::cout << std::left << std::setw(10) << tempOrderItems[i].ItemID
+                    << std::setw(30) << searchItemByID(items_db, tempOrderItems[i].ItemID).Model
+                    << std::setw(10) << tempOrderItems[i].Amount
+                    << std::setw(15) << std::fixed << std::setprecision(2) << tempOrderItems[i].TotalPrice << std::endl;
     }
     std::cout << std::setfill('=') << std::setw(65) << "" << std::setfill(' ') << std::endl;
 }
@@ -169,10 +206,10 @@ Item searchForItem(const MenuScreen& Screen) {
     }
 }
 
-OrderItem addItemToOrder(const MenuScreen& Screen) {
+uint32_t addItemToOrder(const MenuScreen& Screen) {
     Item tempItem;
     OrderItem tempOrderItem;
-    uint32_t selectedAmount = 1;
+    uint32_t selectedAmount = 0;
     std::string tempAmount;
 
     while (true) {
@@ -180,7 +217,7 @@ OrderItem addItemToOrder(const MenuScreen& Screen) {
 
         std::cout << "\nSelected Item:\n";
         displayItem(tempItem);
-        std::cout << "\nSelected Amount: " << selectedAmount << " " << tempAmount << "\n";
+        std::cout << "\nSelected Amount: " << selectedAmount << "\n";
 
         // prompt the user to choose an action
         std::cout << "\nWhat would you like to do now? Choose an action number: ";
@@ -195,10 +232,12 @@ OrderItem addItemToOrder(const MenuScreen& Screen) {
             tempItem = searchForItem(SearchItemScreen);
         }
         else if (actionNumber == 2) {
+            tempOrderItem.ID = getNextAvailableID<OrderItem>(order_item_db);
             tempOrderItem.ItemID = tempItem.ID;
             tempOrderItem.Amount = selectedAmount;
             tempOrderItem.TotalPrice = selectedAmount * tempItem.Price;
-            return tempOrderItem;
+            order_item_db.push_back(tempOrderItem);
+            return tempOrderItem.ID;
         }
         else if (actionNumber == 3) {
             std::cout << "\nSet new Amount: ";
@@ -207,7 +246,7 @@ OrderItem addItemToOrder(const MenuScreen& Screen) {
         }
         else if (actionNumber == 4) {
             std::cout << "\nItem addition cancelled.\n";
-            return OrderItem(0,0,0);
+            return 0;
         }
         else {
             std::cout << "\nInvalid action number. Please choose a number between 1 and " << Screen.Actions.size() << ".\n";
@@ -217,9 +256,9 @@ OrderItem addItemToOrder(const MenuScreen& Screen) {
 
 Order createOrder(const MenuScreen& Screen) {
     // initialize an empty vector of OrderItems
-    std::vector<OrderItem> tempOrderItems;
+    Order tempOrder;
     Item tempItem;
-    OrderItem tempOrderItem;
+    uint32_t tempOrderItemID;
     int32_t tempPage = 0;
 
     while (true) {
@@ -228,7 +267,7 @@ Order createOrder(const MenuScreen& Screen) {
 
         // print the ordered items table
         std::cout << "\n" << Screen.TableName << ":\n\n";
-        displayOrderItemTable(tempOrderItems, tempPage);
+        displayOrderItemTable(tempOrder, tempPage);
 
         // prompt the user to choose an action
         std::cout << "\nWhat would you like to do now? Choose an action number: ";
@@ -240,20 +279,26 @@ Order createOrder(const MenuScreen& Screen) {
         std::cout << "\nYou chose action number " << actionNumber << ".\n";
 
         if (actionNumber == 1) {
-            tempOrderItem = addItemToOrder(AddItemToOrderScreen);
-            if (tempOrderItem.Amount != 0) tempOrderItems.push_back(tempOrderItem);
+            tempOrderItemID = addItemToOrder(AddItemToOrderScreen);
+            std::cout << "\nDEBUG::Temp OrderItem ID: " << tempOrderItemID << std::endl;
+            if (tempOrderItemID != 0){
+                if (tempOrder.FirstOrderItemID == 0) tempOrder.FirstOrderItemID = tempOrderItemID;
+                else {
+                    uint32_t firstID = tempOrder.FirstOrderItemID;
+                    setNextOrderItemID(order_item_db, firstID, tempOrderItemID);
+                }
+            }
         }
         else if (actionNumber == 2) {
             // delete OrderItem
         }
         else if (actionNumber == 3) {
-            Order newOrder;
-            newOrder.ClientID = 12;
-            newOrder.Date = "202305072052";
-            newOrder.PaymentType = PaymentType::Cash;
-            newOrder.TotalPrice = getOrderTotalPrice(tempOrderItems);
-            std::copy(tempOrderItems.begin(), tempOrderItems.end(), std::back_inserter(newOrder.Items));
-            return newOrder;
+            tempOrder.ClientID = 12;
+            std::time_t now = std::time(nullptr);
+            std::strftime(tempOrder.Date, sizeof(tempOrder.Date), "%Y-%m-%d", std::localtime(&now));
+            tempOrder.PaymentType = PaymentType::Cash;
+            tempOrder.TotalPrice = getOrderTotalPrice(tempOrder);
+            return tempOrder;
         }
         else if (actionNumber == 4) {
             nextPage(tempPage);
