@@ -3,9 +3,24 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <cctype>
 #include <ctime>
 
-//#include "structs.h"
+template<typename T>
+bool ascendingPrices(const T& a, const T& b) {
+    return a.Price < b.Price;
+}
+
+template<typename T>
+bool descendingPrices(const T& a, const T& b) {
+    return a.Price > b.Price;
+}
+
+void stringToLower(std::string& input){
+    for (char& c : input) {
+        c = std::tolower(c);
+    }
+}
 
 bool isNumber(std::string input){
     bool isNumber = true;
@@ -182,21 +197,63 @@ Item searchForItem(const MenuScreen& Screen) {
             }
         }
         else if (actionNumber == 2) {
-            // TODO: Search by type
+            std::cout << "\nProvide a type of Item you are interested in: ";
+            std::string input;
+            std::cin.clear();
+            std::cin.sync();
+            std::getline(std::cin, input);
+            stringToLower(input);
+            tempItems.clear();
+            for (const auto& item : items_db) {
+                std::string typeString = itemTypeToString(item.Type);
+                stringToLower(typeString);
+                int result = input.compare(typeString);
+                if (result == 0) {
+                    tempItems.push_back(item);
+                }
+            }
         }
         else if (actionNumber == 3) {
-            // TODO: search by model
+            std::cout << "\nProvide a Model name of part of it: ";
+            std::string input;
+            std::cin.clear();
+            std::cin.sync();
+            std::getline(std::cin, input);
+            stringToLower(input);
+            tempItems.clear();
+            for (const auto& item : items_db) {
+                std::string modelString(item.Model);
+                stringToLower(modelString);
+                int result = modelString.find(input);
+                if (result != -1) {
+                    tempItems.push_back(item);
+                }
+            }
         }
         else if (actionNumber == 4) {
-            // TODO: Filter by price
+            std::cout << "\nPress 1 for 'Lower to Higher', or 2 for 'Higher to Lower' price: ";
+            int choise;
+            std::cin >> choise;
+            if (choise == 1){
+                std::sort(tempItems.begin(), tempItems.end(),ascendingPrices<Item>);
+            }
+            else if (choise == 2){
+                std::sort(tempItems.begin(), tempItems.end(), descendingPrices<Item>);
+            }
+            else std::cout << "\nInvalid sorting option" << std::endl;
         }
         else if (actionNumber == 5) {
-            nextPage(tempPage);
+            tempItems.clear();
+            std::copy(items_db.begin(), items_db.end(), std::back_inserter(tempItems));
+            std::cout << "\nFilters cleared" << std::endl;
         }
         else if (actionNumber == 6) {
-            previousPage(tempPage);
+            nextPage(tempPage);
         }
         else if (actionNumber == 7) {
+            previousPage(tempPage);
+        }
+        else if (actionNumber == 8) {
             std::cout << "\nOrder creation cancelled.\n";
             return Item();
         }

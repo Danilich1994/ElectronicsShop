@@ -101,7 +101,7 @@ int main() {
     AddItemToOrderScreen.ElementIndex = 0;
 
     SearchItemScreen.Name = "Item Search";
-    SearchItemScreen.Actions = {"Choose Item", "Search by Type", "Search by Model", "Filter by Price", "Next Page", "Previous Page", "Cancel"};
+    SearchItemScreen.Actions = {"Choose Item", "Search by Type", "Search by Model", "Filter by Price", "Clear Filters", "Next Page", "Previous Page", "Cancel"};
     SearchItemScreen.TableName = "Found Items";
     SearchItemScreen.ElementIndex = 0;
 
