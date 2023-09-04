@@ -135,10 +135,10 @@ struct Order {
     char Date[11];
     uint32_t ClientID;
     float TotalPrice;
-    PaymentType PaymentType;
+    PaymentType PayType;
     uint32_t FirstOrderItemID;
 
-    Order(): ID(0), ClientID(0), TotalPrice(0), PaymentType(PaymentType::UnknownPayment), FirstOrderItemID(0) { Date[0] = '\0';};
+    Order(): ID(0), ClientID(0), TotalPrice(0), PayType(PaymentType::UnknownPayment), FirstOrderItemID(0) { Date[0] = '\0';};
 };
 
 // Уровни пользователей

@@ -106,9 +106,9 @@ int main() {
     SearchItemScreen.ElementIndex = 0;
 
 
-    items_db = loadFromFile<Item>( "items.bin" );
-    order_db = loadFromFile<Order>( "orders.bin" );
-    order_item_db = loadFromFile<OrderItem>( "item_orders.bin" );
+    items_db = loadFromFile<Item>( "./output/items.bin" );
+    order_db = loadFromFile<Order>( "./output/orders.bin" );
+    order_item_db = loadFromFile<OrderItem>( "./output/item_orders.bin" );
 
     displayOrderTable(order_db);
 
@@ -129,7 +129,7 @@ int main() {
         std::cout << "There are " << order_db.size() << " orders in DB" << std::endl;
         std::cout << "First order 'FirstItemId' = " << order_db[0].FirstOrderItemID << std::endl;
     }
-    saveToFile<Order>(order_db, "orders.bin");
-    saveToFile<OrderItem>(order_item_db, "item_orders.bin");
+    saveToFile<Order>(order_db, "./output/orders.bin");
+    saveToFile<OrderItem>(order_item_db, "./output/item_orders.bin");
     return 0;
 }

@@ -353,7 +353,7 @@ Order createOrder(const MenuScreen& Screen) {
             tempOrder.ClientID = 12;
             std::time_t now = std::time(nullptr);
             std::strftime(tempOrder.Date, sizeof(tempOrder.Date), "%Y-%m-%d", std::localtime(&now));
-            tempOrder.PaymentType = PaymentType::Cash;
+            tempOrder.PayType = PaymentType::Cash;
             tempOrder.TotalPrice = getOrderTotalPrice(tempOrder);
             return tempOrder;
         }
